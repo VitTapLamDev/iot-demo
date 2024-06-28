@@ -1,0 +1,154 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+</head>
+<style>
+    table, th, td {
+        border: 1px solid;
+    }
+    .door-container {
+        position: relative;
+        width: 300px;
+        height: 200px;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        padding: 20px;
+    }
+
+    .door {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 100px;
+        height: 50px;
+        background-color: #fff;
+        border: 1px solid #ccc;
+        border-radius: 10px;
+        padding: 10px;
+        transition: transform 0.5s ease-in-out;
+    }
+
+    .door-handle {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 20px;
+        height: 20px;
+        background-color: #ccc;
+        border-radius: 50%;
+        cursor: pointer;
+    }
+
+    .alarm {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 24px;
+        color: #fff;
+        background-color: #ff0000;
+        padding: 10px;
+        border-radius: 10px;
+        display: none;
+    }
+
+    .alarm.show {
+        display: block;
+    }
+</style>
+<body>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <div class="data_sensor">
+        <table id="data-table" style="position: relative; justify-content: center;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Temperature</th>
+                    <th>Humidity</th>
+                    <th>Lux</th>
+                    <th>Fire Alarm</th>
+                    <th>Timestamp</th>
+                </tr>
+            </thead>
+            <tbody id="data-body">
+                
+            </tbody>
+        </table>
+    </div>
+    <div class="visual_smart_home">
+      <div class="door-container" style="margin-top: 50px; position: relative; justify-content: center; align-items: center;">
+        <div class="door" id="door">
+          <div class="door-handle"></div>
+        </div>
+        <div class="alarm" id="alarm">
+          <i class="fas fa-bell"></i>
+        </div>
+    </div>
+    </div>
+</body>
+</html>
+
+<script>
+  function getData() {
+      $.ajax({
+      type: 'GET',
+      url: '{% url "web:data" %}', // URL to your Django view
+      dataType: 'json',
+      success: function(data) {
+          // Update the table with the new data
+          $('#data-body').html('');
+          $.each(data, function(index, item) {
+          $('#data-body').append('<tr>' +
+              '<td>' + item.id + '</td>' +
+              '<td>' + item.temperature + '</td>' +
+              '<td>' + item.humidity + '</td>' +
+              '<td>' + item.lux + '</td>' +
+              '<td>' + item.fire_alram + '</td>' +
+              '<td>' + item.timestamp + '</td>' +
+              '</tr>');
+              // Update the door and alarm state
+              updateDoor(item);
+          });
+      }
+      });
+  }
+
+  const door = document.getElementById('door');
+  const alarm = document.getElementById('alarm');
+
+  let isAlarmRinging = false;
+  let doorOpen = false;
+
+  function updateDoor(item) {
+      if (item.fire_alram === 1) {
+        if (!doorOpen) {
+          door.style.transform = 'translate(-50%, -50%) scale(2)';
+          doorOpen = true;
+        }
+        if (!isAlarmRinging) {
+          alarm.classList.add('show');
+          isAlarmRinging = true;
+        }
+      } else {
+        if (doorOpen) {
+          door.style.transform = 'translate(-50%, -50%) scale(1)';
+          doorOpen = false;
+        }
+        if (isAlarmRinging) {
+          alarm.classList.remove('show');
+          isAlarmRinging = false;
+        }
+      }
+  }
+
+  $(document).ready(function() {
+      getData();
+      setInterval(getData, 5000);
+  });
+</script>

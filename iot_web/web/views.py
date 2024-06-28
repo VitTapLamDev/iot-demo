@@ -6,7 +6,9 @@ from django.http import JsonResponse
 import json
 import pymysql.cursors
 import os 
+
 from dotenv import load_dotenv
+from datetime import datetime
 
 load_dotenv()
 
@@ -52,9 +54,13 @@ def sensor_data(request):
         return JsonResponse({"text": "Succesfully send data !!!"})
     else:
         return JsonResponse({"text": "Method not allowed !!!"})
-        
+
 @csrf_exempt
-def alarm(request):
+def data_sensor(request):
+    return render(request, "web/data_sensor.html")
+    
+@csrf_exempt
+def data(request):
     if request.method == "GET":
         connection = pymysql.connect(
             host=os.getenv('DATABASE_HOST'),
@@ -70,6 +76,7 @@ def alarm(request):
             with connection.cursor() as cursor:
                 sql = "SELECT * FROM `sensor_data`"
                 cursor.execute(sql)
-                result = cursor.fetchone()
-        return JsonResponse(result)
+                results = cursor.fetchall()
+                results = [{k: v.isoformat() if isinstance(v, datetime) else v for k, v in d.items()} for d in results]
+                return JsonResponse(results, safe=False)    
         
